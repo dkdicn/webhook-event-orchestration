@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>현장 보고 관리자</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      padding: 24px;
+      color: #333;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .header a {
+      color: #4361ee;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    /* Alert Banner */
+    .alert-banner {
+      display: none;
+      background: #d32f2f;
+      color: #fff;
+      padding: 14px 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      animation: slideDown 0.3s ease;
+      position: relative;
+    }
+
+    .alert-banner .close-btn {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      width: auto;
+      padding: 0 4px;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Dashboard */
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      text-align: center;
+    }
+
+    .card .label {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .card .value {
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .card.total .value { color: #1a1a2e; }
+    .card.success .value { color: #2e7d32; }
+    .card.fail .value { color: #c62828; }
+    .card.pending .value { color: #f57c00; }
+
+    .card .unit {
+      font-size: 14px;
+      font-weight: 400;
+      color: #999;
+      margin-left: 2px;
+    }
+
+    /* Search Section */
+    .search-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+
+    .search-section h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1a1a2e;
+    }
+
+    .filters {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .filter-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+    }
+
+    .filter-group select,
+    .filter-group input {
+      padding: 8px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      min-width: 140px;
+    }
+
+    .filter-group select:focus,
+    .filter-group input:focus {
+      outline: none;
+      border-color: #4361ee;
+    }
+
+    .search-btn {
+      padding: 8px 24px;
+      background: #4361ee;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      height: 38px;
+    }
+
+    .search-btn:hover { background: #3a56d4; }
+
+    .reset-btn {
+      padding: 8px 16px;
+      background: #f5f5f5;
+      color: #666;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      height: 38px;
+    }
+
+    .reset-btn:hover { background: #eee; }
+
+    /* Table */
+    .table-section {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+
+    .table-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .table-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+
+    .table-header .count {
+      font-size: 13px;
+      color: #888;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      background: #fafafa;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    tbody td {
+      padding: 14px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid #f5f5f5;
+      vertical-align: top;
+    }
+
+    tbody tr:hover { background: #fafafe; }
+    tbody tr.fail-row { background: #fff5f5; }
+    tbody tr.fail-row:hover { background: #ffeded; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-success { background: #e8f5e9; color: #2e7d32; }
+    .badge-fail { background: #fce4ec; color: #c62828; }
+    .badge-pending { background: #fff3e0; color: #e65100; }
+
+    .badge-safety { background: #ffebee; color: #c62828; }
+    .badge-process { background: #e3f2fd; color: #1565c0; }
+    .badge-issue { background: #fff8e1; color: #f57f17; }
+    .badge-etc { background: #f3e5f5; color: #7b1fa2; }
+
+    .badge-high { background: #ffcdd2; color: #b71c1c; }
+    .badge-medium { background: #fff9c4; color: #f57f17; }
+    .badge-low { background: #c8e6c9; color: #2e7d32; }
+
+    .msg-preview {
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #aaa;
+      font-size: 15px;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard { grid-template-columns: repeat(2, 1fr); }
+      .filters { flex-direction: column; }
+      .filter-group select,
+      .filter-group input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>현장 보고 관리자</h1>
+    <a href="/">사용자 페이지로 이동</a>
+  </div>
+
+  <!-- Alert Banner -->
+  <div id="alertBanner" class="alert-banner">
+    <span id="alertText"></span>
+    <button class="close-btn" onclick="closeAlert()">&times;</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <div class="card total">
+      <div class="label">오늘 총 보고</div>
+      <div><span class="value" id="totalCount">0</span><span class="unit">건</span></div>
+    </div>
+    <div class="card success">
+      <div class="label">성공</div>
+      <div><span class="value" id="successCount">0</span><span class="unit">건</span></div>
+    </div>
+    <div class="card fail">
+      <div class="label">실패</div>
+      <div><span class="value" id="failCount">0</span><span class="unit">건</span></div>
+    </div>
+    <div class="card pending">
+      <div class="label">대기 중</div>
+      <div><span class="value" id="pendingCount">0</span><span class="unit">건</span></div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-section">
+    <h2>보고서 검색</h2>
+    <div class="filters">
+      <div class="filter-group">
+        <label>카테고리</label>
+        <select id="categoryFilter">
+          <option value="">전체</option>
+          <option value="안전">안전</option>
+          <option value="공정">공정</option>
+          <option value="이슈">이슈</option>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>우선순위</label>
+        <select id="priorityFilter">
+          <option value="">전체</option>
+          <option value="HIGH">HIGH</option>
+          <option value="MEDIUM">MEDIUM</option>
+          <option value="LOW">LOW</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>본문 검색</label>
+        <input type="text" id="keywordFilter" placeholder="검색어 입력...">
+      </div>
+      <button class="search-btn" onclick="searchReports()">검색</button>
+      <button class="reset-btn" onclick="resetFilters()">초기화</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-section">
+    <div class="table-header">
+      <h2>보고서 목록</h2>
+      <span class="count" id="reportCount">0건</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>상태</th>
+          <th>카테고리</th>
+          <th>우선순위</th>
+          <th>요약</th>
+          <th>보고 내용</th>
+          <th>등록일시</th>
+        </tr>
+      </thead>
+      <tbody id="reportTableBody">
+        <tr><td colspan="7" class="empty-state">데이터가 없습니다</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Dashboard
+    async function loadDashboard() {
+      try {
+        var res = await fetch('/api/admin/dashboard');
+        var data = await res.json();
+        document.getElementById('totalCount').textContent = data.todayTotal;
+        document.getElementById('successCount').textContent = data.todaySuccess;
+        document.getElementById('failCount').textContent = data.todayFail;
+        document.getElementById('pendingCount').textContent = data.todayPending;
+      } catch (e) {
+        console.error('대시보드 로드 실패', e);
+      }
+    }
+
+    // Search
+    async function searchReports() {
+      var category = document.getElementById('categoryFilter').value;
+      var priority = document.getElementById('priorityFilter').value;
+      var keyword = document.getElementById('keywordFilter').value;
+
+      var params = new URLSearchParams();
+      if (category) params.append('category', category);
+      if (priority) params.append('priority', priority);
+      if (keyword) params.append('keyword', keyword);
+
+      try {
+        var res = await fetch('/api/admin/reports?' + params.toString());
+        var reports = await res.json();
+        renderTable(reports);
+      } catch (e) {
+        console.error('검색 실패', e);
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById('categoryFilter').value = '';
+      document.getElementById('priorityFilter').value = '';
+      document.getElementById('keywordFilter').value = '';
+      searchReports();
+    }
+
+    function renderTable(reports) {
+      var tbody = document.getElementById('reportTableBody');
+      document.getElementById('reportCount').textContent = reports.length + '건';
+
+      if (reports.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">데이터가 없습니다</td></tr>';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < reports.length; i++) {
+        var r = reports[i];
+        var rowClass = r.status === 'FAIL' ? ' class="fail-row"' : '';
+        var statusBadge = getStatusBadge(r.status);
+        var categoryBadge = getCategoryBadge(r.category);
+        var priorityBadge = getPriorityBadge(r.priority);
+        var summary = r.summary || '-';
+        var time = formatDate(r.createdAt);
+
+        html += '<tr' + rowClass + '>' +
+          '<td>' + r.id + '</td>' +
+          '<td>' + statusBadge + '</td>' +
+          '<td>' + categoryBadge + '</td>' +
+          '<td>' + priorityBadge + '</td>' +
+          '<td>' + escapeHtml(summary) + '</td>' +
+          '<td class="msg-preview" title="' + escapeAttr(r.message) + '">' + escapeHtml(r.message) + '</td>' +
+          '<td>' + time + '</td>' +
+          '</tr>';
+      }
+      tbody.innerHTML = html;
+    }
+
+    function getStatusBadge(status) {
+      if (status === 'SUCCESS') return '<span class="badge badge-success">SUCCESS</span>';
+      if (status === 'FAIL') return '<span class="badge badge-fail">FAIL</span>';
+      return '<span class="badge badge-pending">PENDING</span>';
+    }
+
+    function getCategoryBadge(category) {
+      if (!category) return '-';
+      var cls = 'badge-etc';
+      if (category === '안전') cls = 'badge-safety';
+      else if (category === '공정') cls = 'badge-process';
+      else if (category === '이슈') cls = 'badge-issue';
+      return '<span class="badge ' + cls + '">' + category + '</span>';
+    }
+
+    function getPriorityBadge(priority) {
+      if (!priority) return '-';
+      var cls = 'badge-low';
+      if (priority === 'HIGH') cls = 'badge-high';
+      else if (priority === 'MEDIUM') cls = 'badge-medium';
+      return '<span class="badge ' + cls + '">' + priority + '</span>';
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      var d = new Date(dateStr);
+      var mm = String(d.getMonth() + 1).padStart(2, '0');
+      var dd = String(d.getDate()).padStart(2, '0');
+      var hh = String(d.getHours()).padStart(2, '0');
+      var mi = String(d.getMinutes()).padStart(2, '0');
+      return mm + '-' + dd + ' ' + hh + ':' + mi;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function escapeAttr(str) {
+      if (!str) return '';
+      return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // SSE Alerts
+    var eventSource = new EventSource('/api/reports/alerts/subscribe');
+    eventSource.addEventListener('alert', function(event) {
+      var alert = JSON.parse(event.data);
+      showAlert(alert);
+      loadDashboard();
+      searchReports();
+    });
+
+    function showAlert(data) {
+      var banner = document.getElementById('alertBanner');
+      var text = document.getElementById('alertText');
+      text.textContent = '보고서 #' + data.reportId + ' 처리 실패 - ' + data.failReason;
+      banner.style.display = 'block';
+
+      setTimeout(function() {
+        banner.style.display = 'none';
+      }, 15000);
+    }
+
+    function closeAlert() {
+      document.getElementById('alertBanner').style.display = 'none';
+    }
+
+    // Enter key search
+    document.getElementById('keywordFilter').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') searchReports();
+    });
+
+    // Initial load
+    loadDashboard();
+    searchReports();
+
+    // Auto refresh dashboard every 30s
+    setInterval(loadDashboard, 30000);
+  </script>
+</body>
+</html>
